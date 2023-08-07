@@ -6,7 +6,7 @@
 
 
 library(maptools)
-area <- readShapePoly("C:/Users/john/Documents/Geodata/VI/tl_2014_78_estate/tl_2014_78_estate.shp")
+area <- readShapePoly("./data_raw/tl_2014_78_estate.shp")
 
 # # or file.choose:
 # area <- readShapePoly(file.choose())
@@ -20,7 +20,7 @@ mapImage <- get_map(location = c(lon = -64.77, lat = 17.75),
                     color = "color",
                     source = "google",
                      maptype = "terrain",
-                    zoom = 15)
+                    zoom = 13)
 
 area.points <- fortify(area)
 

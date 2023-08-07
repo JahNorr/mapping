@@ -13,5 +13,5 @@ area.map(m, c("North Dakota","South Dakota"))
 
 
 #map.scale(-160,45,relwidth = 0.15, metric = TRUE, ratio = TRUE)
-map('world', 'Virgin Islands',resolution = 0 )    # county map of New Jersey
+map('world', 'Virgin Islands',resolution = 1 )    # county map of VI
 

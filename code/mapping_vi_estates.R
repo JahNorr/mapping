@@ -1,7 +1,5 @@
-dir<-getwd()
-setwd("..")
-load("mapping/vi_estates.RData")
-setwd(dir)
+load("./data/vi_estates.RData")
+
 
 vi_map_limits<-function(x) {
   if (x %in% c("St. Croix","STX","Croix"))  island<-"St. Croix"
