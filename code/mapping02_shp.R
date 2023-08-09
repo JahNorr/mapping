@@ -7,7 +7,7 @@ library(maps)
 library(mapdata)
 library(maptools)  #for shapefiles
 library(scales)  #for transparency
-library(rgdal)
+# library(rgdal)
 #=====================================
 #   best St. Croix limits
 
@@ -46,7 +46,7 @@ library(rgdal)
 # lonmax<--64.741
 # lonmin<--64.7428
 
-est<-rgdal::readOGR("./data_raw/tl_2014_78_estate.shp")
+est<- terra::vect("./data_raw/tl_2014_78_estate.shp") #rgdal::readOGR("./data_raw/tl_2014_78_estate.shp")
 
 islands<-c("St. Croix","St. Thomas","St. John")
 
