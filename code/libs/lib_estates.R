@@ -1,5 +1,19 @@
 
-estate_data <- function(year=2022, useOGR = TRUE) {
+require(dplyr)
+
+
+islands <- function() {
+  readRDS("./data/islands.rds")
+}
+
+estate_data_raw <- function(year=2022) {
+  
+  estate_geodata_raw() %>% 
+    as.data.frame()
+  
+}
+
+estate_geodata_raw <- function(year=2022) {
   
   shp_file <- paste0("./data_raw/tl_", year,"_78_estate.shp")
   
@@ -9,9 +23,44 @@ estate_data <- function(year=2022, useOGR = TRUE) {
   
 }
 
+estate_data <- function() {
+  
+  readRDS(file = "./data/estates.rds")
+  
+}
+
+
+estate_geodata <- function() {
+  
+  geo <- estate_geodata_raw()
+  geo@ptr$polygonsList()
+  
+}
+
+build_estates <- function() {
+  
+  df <- estate_data_raw()  %>% 
+    rename(estate = NAME) %>% 
+    rename(state_fips = STATEFP)%>% 
+    rename(county_fips = COUNTYFP)%>% 
+    rename(estate_fips = ESTATEFP)%>% 
+    rename(center_lon = INTPTLON)%>% 
+    rename(center_lat = INTPTLAT) %>% 
+    mutate(center_lon = as.numeric(center_lon))%>% 
+    mutate(center_lat = as.numeric(center_lat))%>% 
+    select(-NAMELSAD, -NAMELSAD, -LSAD, -CLASSFP, -MTFCC,
+           -FUNCSTAT, -ALAND, -AWATER) %>% 
+    mutate(subdist = NA)
+  
+  saveRDS(df, "./data/estates.rds")
+}
+
+
 ggplot_subdistricts <- function(isl=c("STX","STT","STJ"),estates = NULL, 
                                 label = TRUE, lbl_size = 2.9,
-                                maplims = NULL, color_on="#BBBBBBFF",color_off="#00000000",
+                                maplims = NULL, 
+                                fill_on="#BBBBBBFF",
+                                fill_off="#00000000",
                                 verbose=FALSE, year = 2022) {
   
   #===============================================
@@ -33,7 +82,7 @@ ggplot_subdistricts <- function(isl=c("STX","STT","STJ"),estates = NULL,
   shp_file <- "./data_raw/tl_2022_78_estate.shp"
   #est<-rgdal::readOGR(shp_file )
   
-  est <- estate_data(useOGR = F) #%>% as.data.frame()
+  est <- estate_data() #%>% as.data.frame()
   
   # if(class(est) == "SpatVector")
   df_est <- est %>% as.data.frame() #else
@@ -51,7 +100,7 @@ ggplot_subdistricts <- function(isl=c("STX","STT","STJ"),estates = NULL,
     mutate(lat = as.numeric(lat)) %>% 
     mutate(lon = as.numeric(lon))
   
-  est_nums<- df_estates %>% filter(est_fips == fips) %>% pull(geom)
+  est_nums<- df_estates %>% filter(fips == {{fips}}) %>% pull(geom)
   
   if(is.null(maplims)) {
     
@@ -75,9 +124,9 @@ ggplot_subdistricts <- function(isl=c("STX","STT","STJ"),estates = NULL,
     maplims["maxlon"]<-max(lim_tmp["maxlon",])
   }
   
-  colors <- palette.colors(palette = "ggplot2")
-  colors[1] <- "#dddddd"
-    #c("#dddddd","#aaffaa","#ffaaaa")
+  fill_colors <- palette.colors(palette = "ggplot2")
+  fill_colors[1] <- "#dddddd"
+  #c("#dddddd","#aaffaa","#ffaaaa")
   
   show.axes<-FALSE
   
@@ -96,7 +145,7 @@ ggplot_subdistricts <- function(isl=c("STX","STT","STJ"),estates = NULL,
                  colour = "black") +
     coord_map() +
     
-    scale_fill_manual(values=colors, guide = "none") +
+    scale_fill_manual(values=fill_colors, guide = "none") +
     
     ylim(maplims["minlat"],maplims["maxlat"]) +
     xlim(maplims["minlon"],maplims["maxlon"]) +
@@ -104,7 +153,7 @@ ggplot_subdistricts <- function(isl=c("STX","STT","STJ"),estates = NULL,
     theme(panel.background = element_blank(), 
           legend.background = element_blank(),
           legend.key = element_blank())
- 
+  
   if(label) gpl <- gpl +
     geom_text(data = df_est, mapping = aes(x = lon, y=lat, label = estate), size = lbl_size) 
   gpl 
@@ -114,19 +163,29 @@ ggplot_subdistricts <- function(isl=c("STX","STT","STJ"),estates = NULL,
 ##
 ##################################################################################
 
-ggplot_estates <- function(isl=c("STX","STT","STJ"),estates = NULL, maplims = NULL, color_on="#BBBBBBFF",color_off="#00000000",verbose=FALSE, year = 2022) {
+ggplot_estates <- function(isl=c("STX","STT","STJ"),estates = NULL, 
+                           show_others = TRUE,
+                           label = TRUE, 
+                           label_color = "black",
+                           label_others = FALSE,
+                           title = "",
+                           maplims = NULL, 
+                           fill_on="#BBBBBBFF",
+                           fill_off="#00000000",
+                           verbose=FALSE, year = 2022) {
   
   #===============================================
   #
   # mapping
   #
   #
-  require(maps,quietly = T)
-  require(mapdata,quietly = T)
-  # require(maptools,quietly = T)  #for shapefiles
-  require(scales,quietly = T)  #for transparency
-  require(rgdal,quietly = T)
+  require(ggplot2)
   
+  # require(maps,quietly = T)
+  # require(mapdata,quietly = T)
+  # # require(maptools,quietly = T)  #for shapefiles
+  # require(scales,quietly = T)  #for transparency
+  # 
   
   ##############################################################
   ##
@@ -135,7 +194,7 @@ ggplot_estates <- function(isl=c("STX","STT","STJ"),estates = NULL, maplims = NU
   shp_file <- "./data_raw/tl_2022_78_estate.shp"
   #est<-rgdal::readOGR(shp_file )
   
-  est <- estate_data(useOGR = F) #%>% as.data.frame()
+  est <- estate_geodata_raw() #%>% as.data.frame()
   
   # if(class(est) == "SpatVector")
   df_est <- est %>% as.data.frame() #else
@@ -145,28 +204,19 @@ ggplot_estates <- function(isl=c("STX","STT","STJ"),estates = NULL, maplims = NU
   fips<-c("010","030","020")
   
   isl<-isl[1]
-  isln<-which(isls==isl)
+  isln<-which(tolower(isls)== tolower(isl))
   
   island <- islands[isln]
   fips<-fips[isln]
   
-  df_est <- est %>% as.data.frame() %>%  
-    select(estate = NAME, fips = COUNTYFP, lat = INTPTLAT, lon = INTPTLON ) %>% 
-    mutate(lat = as.numeric(lat)) %>% 
-    mutate(lon = as.numeric(lon))
+  df_est <- estate_data() %>% 
+    mutate(rn = row_number()) 
   
-  est_nums<-
-    which(
-      mapply(function(nm,fp) {
-
-        x <- sapply(estates, function(est_in) {
-          grepl(est_in,nm) && fp == fips
-        })
-
-        x <- any(x)
-      }, df_est$estate, df_est$fips)
-      
-    )
+  
+  est_nums <- which_estates(df_est, estates, fips = fips)
+  
+  # other_nums <- 1:nrow(df_est)
+  # other_nums <- other_nums[-est_nums]
   
   if(is.null(maplims)) {
     
@@ -190,23 +240,38 @@ ggplot_estates <- function(isl=c("STX","STT","STJ"),estates = NULL, maplims = NU
     maplims["maxlon"]<-max(lim_tmp["maxlon",])
   }
   
-  colors<-rep(color_off,length(est))
-  
-  colors[est_nums]<-color_on
   
   show.axes<-FALSE
   
   data <- as.data.frame(terra::geom(est)) %>% 
-    mutate(geom = factor(geom))
+    mutate(geom = factor(geom)) 
   
-  ggplot2::ggplot() + 
+  if(!show_others) {
+    data <- data %>% filter(geom %in% est_nums)
+    
+    df_est <- df_est %>% filter(rn%in%est_nums)
+    
+    fill_colors<-rep(fill_on,nrow(df_est))
+    
+  } else {
+    
+    fill_colors<-rep(fill_off,nrow(df_est))
+    fill_colors[est_nums]<-fill_on
+    if(!label_others) df_est <- df_est %>% 
+      mutate(estates = ifelse(rn %in% est_nums,estate,"")) 
+    
+  }
+  
+  
+  label_colors<-rep(label_color,nrow(df_est))
+  
+  gpl <- ggplot2::ggplot() + 
     geom_polygon(data = data, aes(x = x, y = y, group = geom, fill =  geom),
                  colour = "black") +
-    coord_map() +
     
-    geom_text(data = df_est, mapping = aes(x = lon, y=lat, label = estate), size = 2.9) +
+    coord_map(clip = "off") +
     
-    scale_fill_manual(values=colors, guide = "none") +
+    scale_fill_manual(values=fill_colors, guide = "none") +
     
     ylim(maplims["minlat"],maplims["maxlat"]) +
     xlim(maplims["minlon"],maplims["maxlon"]) +
@@ -214,6 +279,21 @@ ggplot_estates <- function(isl=c("STX","STT","STJ"),estates = NULL, maplims = NU
     theme(panel.background = element_blank(), 
           legend.background = element_blank(),
           legend.key = element_blank())
+  
+  if(label) {
+    
+    gpl <-gpl + geom_text(data = df_est, 
+                          mapping = aes(x = center_lon, y=center_lat, 
+                                        label = estate, color = fips), 
+                          size = 2.9) +
+      
+      scale_color_manual(values=label_colors, guide = "none") 
+    
+  }
+  
+  if(nchar(title)>0) gpl <- gpl + ggtitle(title)
+  
+  gpl
   
 }
 
@@ -235,7 +315,7 @@ island_maplims <- function(isl){
     
     
   }
-
+  
   df_stx_lims <- data.frame(isl = "stx", fips = "010",
                             minlat=17.67,maxlat = 17.8,
                             minlon = -64.90, maxlon = -64.57)
@@ -254,10 +334,10 @@ island_maplims <- function(isl){
   
   df_lims %>% unlist()
 }
-  
-  
+
+
 # 
-# plot_estate<-function(isl=c("STX","STT","STJ"),estates = NULL,color_on="#BBBBBBFF",color_off="#00000000",verbose=FALSE, year = 2022) {
+# plot_estate<-function(isl=c("STX","STT","STJ"),estates = NULL,fill_on= "grey90",fill_off="#00000000",verbose=FALSE, year = 2022) {
 #   
 #   #===============================================
 #   #
@@ -318,9 +398,9 @@ island_maplims <- function(isl){
 #   
 #   
 #   # colors<-alpha("darkgreen",0.1+df_fp$pop_val*0.9)
-#   colors<-rep(color_off,length(est))
+#   colors<-rep(fill_off,length(est))
 #   
-#   colors[est_nums]<-color_on
+#   colors[est_nums]<-fill_on
 #   
 #   show.axes<-FALSE
 #   
@@ -352,18 +432,17 @@ islands <- function() {
 }
 
 which_estates <- function(df, estates, fips) {
-
-    yn <- which(
-      mapply(function(nm,fp) {
-
-        x <- sapply(estates, function(est_in) {
-          grepl(est_in,nm) && fp == fips
-        })
-        x <- any(x)
-      }, df$estate, df$fips)
-
-    )
-    
-    yn
-
+  
+  yn <- 
+    mapply(function(nm,fp) {
+      x <- sapply(estates, function(est_in) {
+        
+        grepl(est_in,nm) && fp == fips
+        
+      })
+      any(x)
+    }, df$estate, df$county_fips)
+  
+  which(yn)
+  
 }
