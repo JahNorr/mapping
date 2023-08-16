@@ -1,13 +1,16 @@
 
 require(dplyr)
+require(ggplot2)
 
 source("./code/libs/lib_estates.R")
+source("./code/libs/lib_subdistricts.R")
+source("./code/libs/lib_islands.R")
 
 build_sub_stx_03 <- function() {
   
   subdist <- subdist_from_func()
   isl <- isl_from_func()
-  fips <- islands() %>% filter(tolower(Abbrev) == isl) %>% pull(CountyCode) %>% paste0("0", .)
+  fips <- islands(isl) %>% pull(county_fips) 
   
   maplims <- numeric()
   maplims["minlat"]<-17.665
@@ -31,14 +34,15 @@ build_sub_stx_03 <- function() {
     'Pleasant Valley', 'Solitude East', 'Yellow Cliff South'
   )
   
-  file <- paste0("./data/sub_", isl, "_", subdist, ".rds")
+  file <- paste0("./data/subdistricts/sub_", isl, "_", subdist, ".rds")
   
   saveRDS(estates, file = file)
+  update_subdistricts(isl = isl, estates = estates, as.integer(subdist))
   
 }
 
 
-map_subdist_stx_03 <- function(maplims = NULL) {
+map_subdist_stx_03 <- function(maplims = NULL, ...) {
   
   require(ggplot2, warn.conflicts = FALSE)
   
@@ -55,7 +59,7 @@ map_subdist_stx_03 <- function(maplims = NULL) {
     maplims["maxlon"]<- -64.55
   }
   
-  file <- paste0("./data/sub_", isl, "_", subdist, ".rds")
+  file <- paste0("./data/subdistricts/sub_", isl, "_", subdist, ".rds")
   
   estates <- readRDS(file = file)
   

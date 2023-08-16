@@ -2,14 +2,13 @@
 
 require(dplyr)
 source("./code/libs/lib_estates.R")
+
 build_subdist_stx_03 <- function(save  = T) {
   
   
   isl <- "stx"
   subd <- "03"
   fips <- "010"
-  
-  
   
   est <- estate_data() #%>% as.data.frame()
   
@@ -39,7 +38,7 @@ build_subdist_stx_03 <- function(save  = T) {
   
   inc <- which_estates(df_est, lst_tst_est00, fips = fips)
   
-  file <- paste0("./data/sub_", isl, "_", subd, ".rds")
+  file <- paste0("./data/subdistricts/sub_", isl, "_", subd, ".rds")
   
   
   saveRDS(df_est %>% slice(inc) %>% pull(estate), file = file)
@@ -50,19 +49,19 @@ build_subdist_stx_03 <- function(save  = T) {
 
 subdist_estates <- function(isl, subd) {
   
-  file <- paste0("./data/sub_", isl, "_", subd, ".rds")
+  if(is.integer(subd)) subd <- sprintf("%02d",subd)
+  
+  file <- paste0("./data/subdistricts/sub_", isl, "_", subd, ".rds")
   
   
   readRDS(file = file)
-  
-  
 }
 
 subdist_file <- function(isl, subdist) {
   
   if(is.numeric(subdist)) subdist <- sprintf("%02d", subdist)
   
-  normalizePath(paste0("./data/sub_", isl, "_", subdist, ".rds"), mustWork = FALSE)
+  normalizePath(paste0("./data/subdistricts/sub_", isl, "_", subdist, ".rds"), mustWork = FALSE)
   
 }
 
