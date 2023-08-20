@@ -1,84 +1,89 @@
 
 require(dplyr, quietly = TRUE, warn.conflicts = FALSE)
 require(ggplot2, quietly = TRUE, warn.conflicts = FALSE)
-require(maps,quietly = T)
-require(mapdata,quietly = T)
-
 require(scales,quietly = T)  #for transparency
 
+source("./code/libs/lib_shpfiles.R")
 source("./code/libs/lib_islands.R")
 source("./code/libs/lib_estates.R")
-source("./code/libs/lib_estates_subdist.R")
+source("./code/libs/lib_subdistrict_estates.R")
+source("./code/libs/lib_misc.R")
 
+subdistricts_shp_filename <- function(year = 2022) {
+  shp_filename(year = year, state = "VI", item = "cousub")
+}
+
+subdistrict_geodata_raw <- function(year=2022) {
+  
+  terra::vect(subdistricts_shp_filename()) 
+  
+}
+
+build_subdistricts <- function() {
+ 
+  init_subdistricts()
+  build_subdistrict_geodata()
+  add_subdistrict_limits()
+}
 
 init_subdistricts <- function() {
   
-  df <- usvi::vi_subdistricts %>% 
-    select(subdist_num, subdistrict = Geographic.Area, county_fips = CountyCode ) %>% 
-    mutate(county_fips = paste0("0",county_fips)) %>% 
-    mutate(subdistrict = gsub(" subdistrict","",  subdistrict)) %>% 
-    mutate(minlat = 0) %>% 
-    mutate(maxlat = 0)%>% 
-    mutate(minlon = 0) %>% 
-    mutate(maxlon = 0)
+  shp_file <- subdistricts_shp_filename()
   
-  saveRDS(df, file = "./data/subdistricts.rds")
+  df <- shp_data(shp_file)  %>% 
+    mutate(geom = row_number())%>% 
+    filter(LSAD == 24) %>% 
+    mutate(center_lat = as.integer(INTPTLAT),
+           center_lon = as.integer(INTPTLON)) %>% 
+    select(subdistrict = NAME, geom, county_fips = COUNTYFP, state_fips = STATEFP, 
+           subdistrict_fips = COUSUBFP, 
+           center_lat ,
+           center_lon) %>% 
+    arrange(county_fips,subdistrict_fips) %>% 
+    group_by(county_fips) %>% mutate(subdist_num =row_number()) %>% 
+    as.data.frame() %>% 
+    relocate(subdist_num, .after = subdistrict)
+    
+    save_subdistricts(df)
+    
+}
+
+save_subdistricts <- function(df) {
+
+  saveRDS(df, file = "./data/subdistricts/subdistricts.rds")
 }
 
 subdistricts <- function() {
   
-  readRDS(file = "./data/subdistricts.rds")
+  readRDS(file = "./data/subdistricts/subdistricts.rds")
   
 }
 
-build_subdistrict_estates <- function() {
+build_subdistrict_geodata <- function() {
   
+  geoms <- subdistricts() %>% pull(geom)
   
-  df <- prepped_estate_data()  %>% 
-    
-    # this will hold the new name (saving the original in estate)
-    
-    mutate(subdist_estate = estate) %>% 
-    
-    ##  the subdistrict number 
-    ##  (used with the county_fips to identify the subdistrict)
-    
-    mutate(subdist = NA)
+  df <- terra::geom(subdistrict_geodata_raw()) %>% 
+    as.data.frame() %>% 
+    filter(geom %in% geoms)
   
-  save_subdistrict_estates(df)
-}
-
-build_subdistrict_estate_geodata <- function() {
-  
-  df <- as.data.frame(terra::geom(estate_geodata_raw())) 
-  
-  save_subdistrict_estate_geodata(df)
+  save_subdistrict_geodata(df)
   
   
 }
 
-save_subdistrict_estates <- function(df) {
+save_subdistrict_geodata <- function(df) {
   
-  saveRDS(df, "./data/subdistrict_estates.rds")
+  saveRDS(df, "./data/subdistricts/subdistricts_geo.rds")
 }
 
-subdistrict_estates <- function() {
+subdistrict_geodata <- function() {
   
-  readRDS("./data/subdistrict_estates.rds")
-}
-
-save_subdistrict_estate_geodata <- function(df) {
-  
-  saveRDS(df, "./data/subdistrict_estates_geo.rds")
-}
-
-subdistrict_estate_geodata <- function(df) {
-  
-  readRDS("./data/subdistrict_estates_geo.rds")
+  readRDS("./data/subdistricts/subdistricts_geo.rds")
 }
 
 
-update_subdistricts <- function(isl, estates, subd) {
+updte_subdistrict_estates <- function(isl, estates, subd) {
   
   df_est <- subdistrict_estates()
   
@@ -102,106 +107,85 @@ update_subdistricts <- function(isl, estates, subd) {
   save_subdistrict_estates(df_est)
 }
 
-subdist_from_func <- function() {
+add_subdistrict_limits <- function() {
   
-  fname2 <- as.character(sys.calls())[1]
-  fname1 <- as.character(sys.calls())[2]
+  df_subd <- subdistricts() %>% 
+    subdistrict_geo_info()
   
-  if(grepl("st[xjt]_[0-9]{1,2}",fname1)) fname <- fname1 else fname <- fname2 
-  
-  gsub(".*_([0-9]{1,2})\\(.*\\)$","\\1",fname)
+  save_subdistricts(df_subd)
 }
 
-isl_from_func <- function() {
+subdistrict_geo_info <- function(df) {
   
-  fname2 <- as.character(sys.calls())[1]
-  fname1 <- as.character(sys.calls())[2]
+  geoms <- df %>% pull(geom)
   
-  if(grepl("st[xjt]_[0-9]{1,2}",fname1)) fname <- fname1 else fname <- fname2 
+  df_geo <- subdistrict_geodata() %>% 
+    filter(geom %in% geoms) %>% 
+    group_by(geom) %>% 
+    summarise(minlat = min(y), maxlat = max(y),
+              minlon = min(x), maxlon = max(x)) %>% 
+    as.data.frame()
   
-  gsub(".*_(st.)_([0-9]{1,2})\\(.*\\)$","\\1",fname)
+  df_raw <- subdistrict_geodata_raw() 
+  
+  df_geo <- df_geo %>% 
+    mutate(area = terra::expanse(
+      df_raw[geoms],
+      unit = "km"))
+  
+  df %>% left_join(df_geo, by = "geom")
 }
 
-
-
-source_subd_builds <- function() {
-    files <- list.files("./code/libs/subdistricts", full.names = TRUE)
-    
-    sapply(files, source)
-}
-
-# build_subdistricts <- function() {
-# 
-#   source_subd_builds()
-#   
-#   df_subdistricts <- subdistricts()
-#   
-#   build_
-# }
-
-overlapping_subdistricts <- function() {
-  
-  
-}
-
-map_subdistricts <- function(isl, label = TRUE) {
+map_subdistricts <- function(isl = c("stx","stj","stt"), ...) {
   
   require(dplyr)
-
-  df_est <- subdistrict_estates()
   
-  fips <- islands(isl) %>% 
-    pull(county_fips) 
-  
-  maplims <- island_maplims(isl)
-  
-  print(ggplot_subdistricts(isl,df_estates, maplims = maplims, label = label, lbl_size = 2.0))
+  print(ggplot_subdistricts(isl[1],  ...))
   
 }
 
-ggplot_subdistricts <- function(isl=c("STX","STT","STJ"),estates = NULL, 
-                                label = TRUE, lbl_size = 2.9,
+ggplot_subdistricts <- function(isl=c("STX","STT","STJ"), 
+                                subdistricts = NULL, 
+                                show_others = FALSE, 
+                                label = TRUE, lbl_size = 3.2,
                                 maplims = NULL, 
                                 fill_on="#BBBBBBFF",
                                 fill_off="#00000000",
-                                verbose=FALSE, year = 2022) {
+                                outline = FALSE,
+                                verbose=FALSE,
+                                year = 2022, 
+                                file = NULL, ...) {
   
   #===============================================
-  #
-  # mapping
-  #
-  #
-
   
+  isl<-isl[1]  
+  
+  fips <- islands(isl) %>% pull(county_fips)  
   
   ##############################################################
   ##
   ##      use ggplot2
   
   est <- subdistrict_estate_geodata() #%>% as.data.frame()
+  subd_outlines <- subdistrict_geodata() #%>% as.data.frame()
   
-  # if(class(est) == "SpatVector")
-  df_est <- subdistrict_estates() #else
+  ## filter for islands (by fips) and, if subdistricts is not null, subdistrict
   
-  isls<-c("STX","STT","STJ")
-  fips<-c("010","030","020")
+  df_est <- subdistrict_estates() %>% filter(county_fips == {{fips}}) #else
   
-  isl<-isl[1]  
-  df_island <- islands(isl)
-  
-  fips <- df_island %>% pull(county_fips)
-  
-  est_nums<- df_est %>% filter(county_fips == {{fips}}) %>% pull(geom)
-  
-  if(is.null(maplims)) {
+  if(!show_others && !is.null(subdistricts)) {
     
-    maplims <- island_maplims(isl)
+    df_est <- df_est %>% filter(subdist %in% subdistricts)
+    
   }
+  
+  est_geoms <- df_est %>% pull(geom)
+  est <- est %>% filter(geom %in% est_geoms)
   
   fill_colors <- palette.colors(palette = "ggplot2")
   fill_colors[1] <- "#aadddd"
   fill_colors[8] <- "#ffff22"
-  fill_colors <- c(fill_colors,"#cc1144", "#11dddd","#aaffaa")
+  fill_colors <- c(fill_colors,"#aaffaa","#cc1144", "#11dddd")
   
   show.axes<-FALSE
   
@@ -210,27 +194,60 @@ ggplot_subdistricts <- function(isl=c("STX","STT","STJ"),estates = NULL,
     mutate(geom = factor(geom))%>% 
     mutate(subdist = factor(subdist))
   
+  data_subd <- subd_outlines %>% 
+    mutate(geom = factor(geom))
+  
+  if(is.null(maplims)) {
+    if(is.null(subdistricts)) {
+      maplims <- island_maplims(isl)
+    } else {
+      df <- df_est %>% filter(subdist %in% subdistricts) %>% 
+        select(matches("(min|max)(lat|lon)"))
+      
+      maplims <- numeric()
+      maplims["minlat"] <- min(df["minlat"],na.rm = T)
+      maplims["minlon"] <- min(df["minlon"],na.rm = T)
+      maplims["maxlat"] <- max(df["maxlat"],na.rm = T)
+      maplims["maxlon"] <- max(df["maxlon"],na.rm = T)
+    }
+    
+  }
+  
   ## ==========================================================================
   ##
   ##    make the plot
   ##
   
-  gpl <- ggplot2::ggplot() + 
-    geom_polygon(data = data, aes(x = x, y = y, group = geom, fill =  subdist),
-                 colour = "black") +
+  gpl <- ggplot2::ggplot() +
+    
     coord_map() +
     
-    scale_fill_manual(values=fill_colors, guide = "none") +
-    
     ylim(maplims["minlat"],maplims["maxlat"]) +
-    xlim(maplims["minlon"],maplims["maxlon"]) +
+    xlim(maplims["minlon"],maplims["maxlon"]) + 
     
-    theme(panel.background = element_blank(), 
-          legend.background = element_blank(),
-          legend.key = element_blank())
+    geom_polygon(data = data, aes(x = x, y = y,  group = interaction(geom, part), fill =  subdist),
+                 colour = "black") +
+    
+    scale_fill_manual(values=fill_colors, guide = "none") 
+    
+    if(outline) {
+      gpl <- gpl +
+        geom_polygon(data = data_subd, aes(x = x, y = y, group = interaction(geom, part), fill =  NA),
+                     colour = "red", fill = NA, size = 1.5)
+    }
+  
+  gpl <- gpl + theme(panel.background = element_blank(), 
+                     legend.background = element_blank(),
+                     legend.key = element_blank())
   
   if(label) gpl <- gpl +
     geom_text(data = df_est, mapping = aes(x = center_lon, y=center_lat, label = subdist_estate), size = lbl_size) 
+  
+  if(!is.null(file)) {
+    ggsave(filename = file,plot = gpl, ...)
+  }
+  
+  
   gpl 
 }
 
@@ -238,49 +255,85 @@ ggplot_subdistricts <- function(isl=c("STX","STT","STJ"),estates = NULL,
 
 
 
+source_run_subd_builds <- function(prefix, order = NULL) {
+  
+  files <- list.files("./code/libs/subdistricts", full.names = TRUE) %>% 
+    grep(prefix, ., value = TRUE)
+  
+  if(!is.null(order)) {
+    files <- files[order]
+  }
+  
+  invisible(sapply(files,function(file) {
+    source(file)
+    
+    func <- readLines(file) %>%
+      grep("[<]-.*function",., value = TRUE) %>%
+      gsub("(.*) [<].*","\\1",.) %>%
+      stringr::str_trim(.)
+    
+    # print(paste0("trying: ",func))
+    
+    do.call(func, args = list())
+    rm(list = c(func), envir = .GlobalEnv)
+    
+  })
+  )
+}
+
+source_subd_builds <- function(prefix = NULL) {
+  
+  files <- list.files("./code/libs/subdistricts", full.names = TRUE) 
+  
+  if(!is.null(prefix)) {
+    files <- files %>% 
+      grep(prefix, ., value = TRUE)
+  }
+  
+  invisible(sapply(files, source))
+}
+
+remove_subd_sources <- function() {
+  
+  files <- list.files("./code/libs/subdistricts", full.names = TRUE) #%>% 
+  #grep(prefix, ., value = TRUE)
+  
+  invisible(sapply(files,function(file) {
+    #    source(file)
+    
+    func <- readLines(file) %>%
+      grep("[<]-.*function",., value = TRUE) %>%
+      gsub("(.*) [<].*","\\1",.) %>%
+      stringr::str_trim(.)
+    
+    #    do.call(func, args = list())
+    
+    tryCatch(
+      rm(list = c(func), envir = .GlobalEnv), 
+      error = function(e) {}, 
+      warning = function(w) {}
+      
+    )
+  })
+  )
+}
+
+
 rebuild_subdistrict_estates_all <- function() {
   
-  source("./code/libs/subdistricts/sub_stx_01.R")
-  source("./code/libs/subdistricts/sub_stx_02.R")
-  source("./code/libs/subdistricts/sub_stx_03.R")
-  source("./code/libs/subdistricts/sub_stx_05.R")  
-  source("./code/libs/subdistricts/sub_stx_06.R")
-  source("./code/libs/subdistricts/sub_stx_07.R")
-  source("./code/libs/subdistricts/sub_stx_08.R")
-  source("./code/libs/subdistricts/sub_stx_09.R")
-  source("./code/libs/subdistricts/sub_stx_splitme.R")
-  
-  source("./code/libs/subdistricts/fix_body_slob.R")
-  source("./code/libs/subdistricts/fix_barren_spot_west.R")
-  source("./code/libs/subdistricts/fix_vi_corp_land.R")
-  source("./code/libs/subdistricts/fix_cane_garden.R")
-  source("./code/libs/subdistricts/fix_carlton_north.R")
-  source("./code/libs/subdistricts/fix_diamond_west.R")
-  source("./code/libs/subdistricts/fix_whim_east.R")
-  source("./code/libs/subdistricts/fix_river.R")
-  
-  
+  init_subdistricts()
   build_subdistrict_estates()
   build_subdistrict_estate_geodata()
   
-  fix_body_slob()
-  fix_VI_Corp_land()
-  fix_barren_spot_west()
-  fix_cane_garden()
-  fix_diamond_west()
-  fix_whim_east()
-  fix_river()
-  fix_carlton_north()
+  source_run_subd_builds("fix_")
   
-  build_sub_stx_01()
-  build_sub_stx_02()
-  build_sub_stx_03()
-  build_sub_stx_07()
-  build_sub_stx_08()
-  build_sub_stx_09()
-  build_sub_stx_05()
-  build_sub_stx_06()
-  build_sub_stx_99()
+  df_subd_est <- subdistrict_estates() %>% 
+    select(-matches("(min|max)(lat|lon)"), -area) %>% 
+    estate_geo_info()
+  
+  #save_subdistrict_estates(df = df_subd_est) 
+  
+  source_run_subd_builds("stx_", order = c(1,2,3,7,8,9,5,6,4))
   
   map_subdistricts("stx")
 }

@@ -7,13 +7,20 @@ rebuild_estate_data <- function() {
   build_estate_geodata()
   
 }
-  
+
 estate_data_raw <- function(year=2022) {
   
   estate_geodata_raw() %>% 
     as.data.frame()
   
 }
+
+estates_shp_filename <- function(year=2022) {
+  
+  shp_file <- paste0("./data_raw/tl_", year,"_78_estate.shp")
+  
+}
+
 
 estate_geodata_raw <- function(year=2022) {
   
@@ -52,6 +59,18 @@ save_estate_geodata <- function(df) {
   
 }
 
+estate_geo_info <- function(df) {
+  
+  df_geo <- estate_geodata() %>% 
+    group_by(geom) %>% 
+    summarise(minlat = min(y), maxlat = max(y),
+              minlon = min(x), maxlon = max(x)) %>% 
+    as.data.frame() %>% 
+    mutate(area = terra::expanse(estate_geodata_raw(),unit = "km"))
+  
+  df %>% left_join(df_geo, by = "geom")
+}
+
 prepped_estate_data <- function() {
   
   estate_data_raw()  %>% 
@@ -64,6 +83,7 @@ prepped_estate_data <- function() {
     rename(center_lat = INTPTLAT) %>% 
     mutate(center_lon = as.numeric(center_lon))%>% 
     mutate(center_lat = as.numeric(center_lat))%>% 
+    estate_geo_info() %>% 
     select(-NAMELSAD, -NAMELSAD, -LSAD, -CLASSFP, -MTFCC,
            -FUNCSTAT, -ALAND, -AWATER) 
   
@@ -124,7 +144,7 @@ ggplot_estates <- function(isl=c("STX","STT","STJ"),estates = NULL,
     
     
   } else {
-  
+    
     df_est <- estate_data() %>% 
       mutate(rn = row_number()) 
     

@@ -5,6 +5,7 @@ require(ggplot2)
 source("./code/libs/lib_estates.R")
 source("./code/libs/lib_subdistricts.R")
 source("./code/libs/lib_islands.R")
+source("./code/libs/lib_subdistrict_estates.R")
 
 
 build_sub_stx_09 <- function() {
@@ -43,14 +44,7 @@ build_sub_stx_09 <- function() {
   
   estates <- df_est %>% pull(estate)
   
-  paste0("'", paste0(estates %>% sort(),collapse = "', '"), "'")
-  
-  # 'Cane', 'Cane South', 'Cane Valley', 'Carlton North', 'Carlton South', 'Concordia South', 
-  # 'Concordia West', 'Diamond West', 'Enfield Green', 'Frederikshaab', 'Frederiksted', 
-  # 'Hannahs Rest', 'Hogensberg', 'La Grange', 'Mars Hill and Stoney Ground', 'Mint', 
-  # 'Mountain', 'St. Georges Hill', 'Stoney Ground East', 'Stoney Ground West', 'The Whim East', 
-  # 'The Whim West', 'Two Brothers', 'Wheel of Fortune', 'White Lady', 'Whites Bay East', 
-  # 'Whites Bay North', 'Whites Bay South', 'Williams Delight'
+  #paste0("'", paste0(estates %>% sort(),collapse = "', '"), "'")
   
   rms <- c("La Gr", "Freder", "Wheel", "Concord.*W", "Mars", "Cane V", "St. Geor",
            "Hogen", "Two Bro", "Mountain", "Mint")
@@ -65,51 +59,10 @@ build_sub_stx_09 <- function() {
     })
   )
   
-  #print(estates %>% sort())
 
-  
-  offset <- 0.01
-  maplims <- numeric()
-  maplims["minlat"] <- srchlims["minlat"] - offset
-  maplims["maxlat"] <- srchlims["maxlat"] + offset
-  
-  maplims["minlon"] <- srchlims["minlon"] - offset
-  maplims["maxlon"] <- srchlims["maxlon"] + offset
-  
-  
   file <- paste0("./data/subdistricts/sub_", isl, "_", subdist, ".rds")
   
   saveRDS(estates, file = file)
-  update_subdistricts(isl = isl, estates = estates, as.integer(subdist))
-  
-  #print(ggplot_estates(isl, estates, maplim = maplims, subdistricts = T))
-  
-}
+  updte_subdistrict_estates(isl = isl, estates = estates, as.integer(subdist))
 
-
-
-map_subdist_stx_09 <- function(maplims = NULL, ...) {
-  
-  require(ggplot2, warn.conflicts = FALSE)
-  
-  subdist <- subdist_from_func()
-  isl <- isl_from_func()
-  fips <- islands() %>% filter(tolower(Abbrev) == isl) %>% pull(CountyCode) %>% paste0("0", .)
-  
-  
-  if(is.null(maplims)) {
-    maplims <- numeric()
-    maplims["minlat"]<-17.67
-    maplims["minlon"]<- -64.8
-    maplims["maxlat"]<-17.8
-    maplims["maxlon"]<- -64.7
-    
-  }
-  
-  file <- paste0("./data/subdistricts/sub_", isl, "_", subdist, ".rds")
-  
-  estates <- readRDS(file = file)
-  
-  print(ggplot_estates(isl, estates, maplim = maplims, ...))
-  
 }

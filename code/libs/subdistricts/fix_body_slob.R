@@ -78,9 +78,6 @@ fix_body_slob <- function() {
   
   df_geo_test <- subdistrict_estate_geodata() %>% 
     filter( geom %in% geoms) 
-  
-  # ggplot() + 
-  #   geom_polygon(data = df_geo_test, aes(x = x, y = y, group = interaction(geom), fill =  geom),
-  #                colour = "black") 
+
 }
 

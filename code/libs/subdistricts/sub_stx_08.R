@@ -5,6 +5,7 @@ require(ggplot2)
 source("./code/libs/lib_estates.R")
 source("./code/libs/lib_subdistricts.R")
 source("./code/libs/lib_islands.R")
+source("./code/libs/lib_subdistrict_estates.R")
 
 build_sub_stx_08 <- function() {
   
@@ -42,19 +43,8 @@ build_sub_stx_08 <- function() {
   
   estates <- df_est %>% pull(estate)
   
-  paste0("'", paste0(estates %>% sort(),collapse = "', '"), "'")
+  #paste0("'", paste0(estates %>% sort(),collapse = "', '"), "'")
   
-  # 'Bugby Hole', 'Barren Spot West', 'Annas Hope', 'Grove Place', 'Upper Love',
-  #' 'Diamond East', 'Grange North', 'Strawberry Hill', 'Springfield', 
-  #' 'Sion Farm', 'La Reine', 'Montpellier West 2', 'Body Slob', 
-  #' 'Hermon Hill', 'Plessen North', 'Grange Hill', 'Constitution Hill', 
-  #' 'Contentment', 'Peters Farm', 'Ruby', 'Bulows Minde', 'Beeston Hill', 
-  #' 'River', 'Two Friends', 'Friedensthal', 'Sion Hill', 'Hafensight', 
-  #' 'Hard Labor', 'Orange Grove East', 'Bonne Esperance South',
-  #'  'Colquohoun', 'Thomas', 'Christiansted', 'Richmond', 'Bellevue
-  #'  Marys Fancy', 'Mon Bijou', 'Little Princess South', 'LBJ Gardens',
-  #'   'Protestant Cay'
-  #'   
   estates <-  c('Anguilla', 'Annaberg and Shannon Grove', 'Barren Spot West', 'Bettys Hope', 
                 'Blessing', 'Caldwell', 'Cane South', 'Carlton South', 'Cassava Garden', 
                 'Castle Coakley', 'Clifton Hill', 'Coopers', 'Cottage', 'Diamond West', 
@@ -70,7 +60,7 @@ build_sub_stx_08 <- function() {
            "VI Corporation Land$")
   
   inc <- c("Pearl", "Barren Spot East", "Barren Spot West (B)",
-           "Cane Garden (A)",
+           "Cane Garden (A)", "Peters Rest (B)",
            "VI Corporation Land (B)", 
            "VI Corporation Land (C)", "VI Corporation Land (D)", "Diamond West (A)")
   
@@ -82,51 +72,9 @@ build_sub_stx_08 <- function() {
     })
   )
   
-  #print(estates %>% sort())
-
-  
-  offset <- 0.01
-  maplims <- numeric()
-  maplims["minlat"] <- srchlims["minlat"] - offset
-  maplims["maxlat"] <- srchlims["maxlat"] + offset
-  
-  maplims["minlon"] <- srchlims["minlon"] - offset
-  maplims["maxlon"] <- srchlims["maxlon"] + offset
-  
-  
   file <- paste0("./data/subdistricts/sub_", isl, "_", subdist, ".rds")
   
   saveRDS(estates, file = file)
-  update_subdistricts(isl = isl, estates = estates, as.integer(subdist))
-  
-  #print(ggplot_estates(isl, estates, maplim = maplims, subdistricts = T))
-  
-}
-
-
-
-map_subdist_stx_08 <- function(maplims = NULL, ...) {
-  
-  require(ggplot2, warn.conflicts = FALSE)
-  
-  subdist <- subdist_from_func()
-  isl <- isl_from_func()
-  fips <- islands() %>% filter(tolower(Abbrev) == isl) %>% pull(CountyCode) %>% paste0("0", .)
-  
-  
-  if(is.null(maplims)) {
-    maplims <- numeric()
-    maplims["minlat"]<-17.67
-    maplims["minlon"]<- -64.8
-    maplims["maxlat"]<-17.8
-    maplims["maxlon"]<- -64.7
-    
-  }
-  
-  file <- paste0("./data/subdistricts/sub_", isl, "_", subdist, ".rds")
-  
-  estates <- readRDS(file = file)
-  
-  print(ggplot_estates(isl, estates, maplim = maplims, ...))
+  updte_subdistrict_estates(isl = isl, estates = estates, as.integer(subdist))
   
 }

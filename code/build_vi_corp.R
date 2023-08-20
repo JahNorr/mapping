@@ -61,16 +61,16 @@ data_vic1 <- df_geo_vi %>%
 data_01 <- data_vic1 %>% 
   rbind(df_geo_01,df_geo_02)
 
-ggplot() + 
-  geom_polygon(data = data_vic1, aes(x = x, y = y, group = geom, fill =  geom),
-               colour = "black") +
-  geom_point(data = data_vic1, aes(x = x, y = y, group = geom),
-               colour = "yellow", fill =  "red") + coord_map(clip = "on") 
-  
-
-ggplot() + 
-  geom_polygon(data = data_01, aes(x = x, y = y, group = geom, fill =  geom),
-               colour = "black") +  coord_map(clip = "on") 
+# ggplot() + 
+#   geom_polygon(data = data_vic1, aes(x = x, y = y, group = geom, fill =  geom),
+#                colour = "black") +
+#   geom_point(data = data_vic1, aes(x = x, y = y, group = geom),
+#                colour = "yellow", fill =  "red") + coord_map(clip = "on") 
+#   
+# 
+# ggplot() + 
+#   geom_polygon(data = data_01, aes(x = x, y = y, group = geom, fill =  geom),
+#                colour = "black") +  coord_map(clip = "on") 
 
 # ========= vic 01  =======================
 
@@ -80,13 +80,13 @@ data_vic1 <- df_geo_vi %>%
 data_01 <- data_vic1 %>% 
   rbind(df_geo_01,df_geo_02)
 
-ggplot() + 
-  geom_polygon(data = data_vic1, aes(x = x, y = y, group = geom, fill =  geom),
-               colour = "black") + coord_map(clip = "on") 
-
-ggplot() + 
-  geom_polygon(data = data_01, aes(x = x, y = y, group = geom, fill =  geom),
-               colour = "black") +  coord_map(clip = "on") 
+# ggplot() + 
+#   geom_polygon(data = data_vic1, aes(x = x, y = y, group = geom, fill =  geom),
+#                colour = "black") + coord_map(clip = "on") 
+# 
+# ggplot() + 
+#   geom_polygon(data = data_01, aes(x = x, y = y, group = geom, fill =  geom),
+#                colour = "black") +  coord_map(clip = "on") 
 
 # ========= vic 02 =======================
 
@@ -97,14 +97,14 @@ data_02 <- data_vic2 %>%
   rbind(df_geo_01,df_geo_02)
 
 
-ggplot() + 
-  geom_polygon(data = data_vic2, aes(x = x, y = y, group = geom, fill =  geom),
-               colour = "black") +  coord_map(clip = "on") 
-
-ggplot() + 
-  geom_polygon(data = data_02, aes(x = x, y = y, group = geom, fill =  geom),
-               colour = "black") +  coord_map(clip = "on") 
-
+# ggplot() + 
+#   geom_polygon(data = data_vic2, aes(x = x, y = y, group = geom, fill =  geom),
+#                colour = "black") +  coord_map(clip = "on") 
+# 
+# ggplot() + 
+#   geom_polygon(data = data_02, aes(x = x, y = y, group = geom, fill =  geom),
+#                colour = "black") +  coord_map(clip = "on") 
+# 
 
 # ========= vic 03 =======================
 
@@ -115,17 +115,17 @@ data_03 <- data_vic3 %>%
   rbind(df_geo_01,df_geo_02)
 
 
-ggplot() + 
-  geom_polygon(data = data_vic3, aes(x = x, y = y, group = geom, fill =  geom),
-               colour = "black") +  coord_map(clip = "on") 
-
-ggplot() + 
-  geom_polygon(data = data_03, aes(x = x, y = y, group = geom, fill =  geom),
-               colour = "black") +  coord_map(clip = "on") 
-
-ggplot() + 
-  geom_polygon(data = df_geo, aes(x = x, y = y, group = geom, fill =  geom),
-               colour = "black") + coord_map(clip = "on") 
+# ggplot() + 
+#   geom_polygon(data = data_vic3, aes(x = x, y = y, group = geom, fill =  geom),
+#                colour = "black") +  coord_map(clip = "on") 
+# 
+# ggplot() + 
+#   geom_polygon(data = data_03, aes(x = x, y = y, group = geom, fill =  geom),
+#                colour = "black") +  coord_map(clip = "on") 
+# 
+# ggplot() + 
+#   geom_polygon(data = df_geo, aes(x = x, y = y, group = geom, fill =  geom),
+#                colour = "black") + coord_map(clip = "on") 
 
 
 # ========= vic 04 =======================
@@ -137,44 +137,44 @@ data_04 <- data_vic4 %>%
   rbind(df_geo_01,df_geo_02)
 
 
-ggplot() + 
-  geom_polygon(data = data_vic4, aes(x = x, y = y, group = geom, fill =  geom),
-               colour = "black") +  coord_map(clip = "on") 
-
-ggplot() + 
-  geom_polygon(data = data_04, aes(x = x, y = y, group = geom, fill =  geom),
-               colour = "black") +  coord_map(clip = "on") 
-
-ggplot() + 
-  geom_polygon(data = df_geo, aes(x = x, y = y, group = geom, fill =  geom),
-               colour = "black") + coord_map(clip = "on") 
-
+# ggplot() + 
+#   geom_polygon(data = data_vic4, aes(x = x, y = y, group = geom, fill =  geom),
+#                colour = "black") +  coord_map(clip = "on") 
+# 
+# ggplot() + 
+#   geom_polygon(data = data_04, aes(x = x, y = y, group = geom, fill =  geom),
+#                colour = "black") +  coord_map(clip = "on") 
+# 
+# ggplot() + 
+#   geom_polygon(data = df_geo, aes(x = x, y = y, group = geom, fill =  geom),
+#                colour = "black") + coord_map(clip = "on") 
+# 
 
 #=====================================================================
 
 
 
 
-ggplot() + 
-  geom_polygon(data = df_geo_01, aes(x = x, y = y, group = geom, fill =  geom),
-               colour = "black") + coord_map(clip = "on") 
-
-ggplot() + 
-  geom_polygon(data = df_geo_02, aes(x = x, y = y, group = geom, fill =  geom),
-               colour = "black") + coord_map(clip = "on") 
-
+# ggplot() + 
+#   geom_polygon(data = df_geo_01, aes(x = x, y = y, group = geom, fill =  geom),
+#                colour = "black") + coord_map(clip = "on") 
+# 
+# ggplot() + 
+#   geom_polygon(data = df_geo_02, aes(x = x, y = y, group = geom, fill =  geom),
+#                colour = "black") + coord_map(clip = "on") 
+# 
 
 # ======= everything  ===========
 
-ggplot() + 
-  geom_polygon(data = df_geo, aes(x = x, y = y, group = geom, fill =  geom),
-               colour = "black") + coord_map(clip = "on") 
-
+# ggplot() + 
+#   geom_polygon(data = df_geo, aes(x = x, y = y, group = geom, fill =  geom),
+#                colour = "black") + coord_map(clip = "on") 
+# 
 
 
 estates <- estate_data() %>%  filter(grepl("VI Corp", estate)) %>% pull(estate)
 
-ggplot_estates(isl = "stx", estates = estates)
+#ggplot_estates(isl = "stx", estates = estates)
 
 
 #ggplot_subdistricts

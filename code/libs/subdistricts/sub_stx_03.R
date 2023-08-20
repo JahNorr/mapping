@@ -5,6 +5,7 @@ require(ggplot2)
 source("./code/libs/lib_estates.R")
 source("./code/libs/lib_subdistricts.R")
 source("./code/libs/lib_islands.R")
+source("./code/libs/lib_subdistrict_estates.R")
 
 build_sub_stx_03 <- function() {
   
@@ -37,32 +38,7 @@ build_sub_stx_03 <- function() {
   file <- paste0("./data/subdistricts/sub_", isl, "_", subdist, ".rds")
   
   saveRDS(estates, file = file)
-  update_subdistricts(isl = isl, estates = estates, as.integer(subdist))
+  updte_subdistrict_estates(isl = isl, estates = estates, as.integer(subdist))
   
 }
 
-
-map_subdist_stx_03 <- function(maplims = NULL, ...) {
-  
-  require(ggplot2, warn.conflicts = FALSE)
-  
-  subdist <- subdist_from_func() 
-  isl <- isl_from_func() 
-  fips <- islands() %>% filter(tolower(Abbrev) == isl) %>% pull(CountyCode) %>% paste0("0", .)
-  
-  
-  if(is.null(maplims)) {
-    maplims <- numeric()
-    maplims["minlat"]<-17.7
-    maplims["minlon"]<- -64.7
-    maplims["maxlat"]<-17.79
-    maplims["maxlon"]<- -64.55
-  }
-  
-  file <- paste0("./data/subdistricts/sub_", isl, "_", subdist, ".rds")
-  
-  estates <- readRDS(file = file)
-  
-  print(ggplot_estates(isl, estates, maplim = maplims, ...))
-  
-}

@@ -34,7 +34,7 @@ add_island_maplims <- function(df){
   
   df_stx_lims <- data.frame(isl = "STX",
                             minlat=17.67,maxlat = 17.8,
-                            minlon = -64.90, maxlon = -64.57)
+                            minlon = -64.90, maxlon = -64.56)
   
   df_stj_lims <- data.frame(isl = "STJ", 
                             minlat=18.3,maxlat = 18.4,
