@@ -20,7 +20,7 @@ subdistrict_geodata_raw <- function(year=2022) {
 }
 
 build_subdistricts <- function() {
- 
+  
   init_subdistricts()
   build_subdistrict_geodata()
   add_subdistrict_limits()
@@ -43,13 +43,13 @@ init_subdistricts <- function() {
     group_by(county_fips) %>% mutate(subdist_num =row_number()) %>% 
     as.data.frame() %>% 
     relocate(subdist_num, .after = subdistrict)
-    
-    save_subdistricts(df)
-    
+  
+  save_subdistricts(df)
+  
 }
 
 save_subdistricts <- function(df) {
-
+  
   saveRDS(df, file = "./data/subdistricts/subdistricts.rds")
 }
 
@@ -136,6 +136,21 @@ subdistrict_geo_info <- function(df) {
   df %>% left_join(df_geo, by = "geom")
 }
 
+subdistrict_maplims <- function(isl, subds) {
+  
+  fips  <- islands(isl) %>% pull(county_fips)  
+
+  lims <- subdistricts() %>%  filter(county_fips == fips &  subdist_num %in% subds) %>% 
+    select(matches("(min|max)(lat|lon)")) %>% 
+    summarise(minlat = min(minlat),
+              maxlat = max(maxlat),
+              minlon = min(minlon),
+              maxlon = max(maxlon)) %>% unlist()
+  
+  
+  lims
+}
+
 map_subdistricts <- function(isl = c("stx","stj","stt"), ...) {
   
   require(dplyr)
@@ -167,7 +182,10 @@ ggplot_subdistricts <- function(isl=c("STX","STT","STJ"),
   ##      use ggplot2
   
   est <- subdistrict_estate_geodata() #%>% as.data.frame()
-  subd_outlines <- subdistrict_geodata() #%>% as.data.frame()
+  
+  df_subd <- subdistricts() %>% filter(subdist_num %in% subdistricts)
+  
+  subd_outlines <- subdistrict_geodata() %>% filter(geom %in% df_subd$geom)
   
   ## filter for islands (by fips) and, if subdistricts is not null, subdistrict
   
@@ -175,7 +193,7 @@ ggplot_subdistricts <- function(isl=c("STX","STT","STJ"),
   
   if(!show_others && !is.null(subdistricts)) {
     
-    df_est <- df_est %>% filter(subdist %in% subdistricts)
+    df_est <- df_est %>% filter(subdist_num %in% {{subdistricts}})
     
   }
   
@@ -190,25 +208,18 @@ ggplot_subdistricts <- function(isl=c("STX","STT","STJ"),
   show.axes<-FALSE
   
   data <- est %>% 
-    left_join(df_est %>% select(geom,subdist), by = "geom") %>% 
+    left_join(df_est %>% select(geom, subdist_num), by = "geom") %>% 
     mutate(geom = factor(geom))%>% 
-    mutate(subdist = factor(subdist))
+    mutate(subdist_num = factor(subdist_num))
   
   data_subd <- subd_outlines %>% 
-    mutate(geom = factor(geom))
+    mutate(geom = factor(geom)) 
   
   if(is.null(maplims)) {
     if(is.null(subdistricts)) {
       maplims <- island_maplims(isl)
     } else {
-      df <- df_est %>% filter(subdist %in% subdistricts) %>% 
-        select(matches("(min|max)(lat|lon)"))
-      
-      maplims <- numeric()
-      maplims["minlat"] <- min(df["minlat"],na.rm = T)
-      maplims["minlon"] <- min(df["minlon"],na.rm = T)
-      maplims["maxlat"] <- max(df["maxlat"],na.rm = T)
-      maplims["maxlon"] <- max(df["maxlon"],na.rm = T)
+      maplims <- subdistrict_maplims(isl = isl, subds = subdistricts)
     }
     
   }
@@ -225,23 +236,24 @@ ggplot_subdistricts <- function(isl=c("STX","STT","STJ"),
     ylim(maplims["minlat"],maplims["maxlat"]) +
     xlim(maplims["minlon"],maplims["maxlon"]) + 
     
-    geom_polygon(data = data, aes(x = x, y = y,  group = interaction(geom, part), fill =  subdist),
+    geom_polygon(data = data, aes(x = x, y = y,  group = interaction(geom, part), fill =  subdist_num),
                  colour = "black") +
     
     scale_fill_manual(values=fill_colors, guide = "none") 
-    
-    if(outline) {
-      gpl <- gpl +
-        geom_polygon(data = data_subd, aes(x = x, y = y, group = interaction(geom, part), fill =  NA),
-                     colour = "red", fill = NA, size = 1.5)
-    }
+  
+  if(outline) {
+    gpl <- gpl +
+      geom_polygon(data = data_subd, aes(x = x, y = y, group = interaction(geom, part), fill =  NA),
+                   colour = "red", fill = NA, linewidth = 1.5)
+  }
   
   gpl <- gpl + theme(panel.background = element_blank(), 
                      legend.background = element_blank(),
                      legend.key = element_blank())
   
   if(label) gpl <- gpl +
-    geom_text(data = df_est, mapping = aes(x = center_lon, y=center_lat, label = subdist_estate), size = lbl_size) 
+    geom_text(data = df_est, mapping = aes(x = center_lon, y=center_lat, 
+                                           label = subdist_estate), size = lbl_size) 
   
   if(!is.null(file)) {
     ggsave(filename = file,plot = gpl, ...)

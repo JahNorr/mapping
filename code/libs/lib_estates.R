@@ -102,7 +102,19 @@ save_estates <- function(df) {
   saveRDS(df, "./data/estates.rds")
 }
 
-
+estate_maplims <- function(estates) {
+  
+  est <- estate[1]
+  lims <- estate_data() %>%  filter(estate %in% estates) %>% 
+    select(matches("(min|max)(lat|lon)")) %>% 
+    summarise(minlat = min(minlat),
+              maxlat = max(maxlat),
+              minlon = min(minlon),
+              maxlon = max(maxlon)) %>% unlist()
+  
+  
+  lims
+}
 ##
 ##################################################################################
 
@@ -164,9 +176,17 @@ ggplot_estates <- function(isl=c("STX","STT","STJ"),estates = NULL,
   # other_nums <- other_nums[-est_nums]
   
   if(is.null(maplims)) {
-    maplims <- island_maplims(isl)
+    if (subdistricts){
+      maplims <- subdistrict_maplims(isl = isl, subds = subdistricts)
+    } else if(show_others) {
+      maplims <- island_maplims(isl)
+    } else  {  
+      maplims <- estate_maplims(names(est_nums))
+    }
     
   }
+  
+  browser()
   
   show.axes<-FALSE
   
@@ -248,7 +268,7 @@ which_estates <- function(df, estates, fips, logical = FALSE) {
     mapply(function(nm,fp) {
       x <- sapply(estates, function(est_in) {
         
-        grepl(est_in,nm) && fp == fips
+        grepl(est_in,nm, ignore.case = TRUE) && fp == fips
         
       })
       any(x)
